@@ -10,7 +10,7 @@
    * 2020-07-29 성공은 했지만 불확실 - [참고 예제](https://towardsdatascience.com/play-with-quickdraw-a-real-time-application-137e66ea9b60) 
 
 4. 어린이용 영어 게임 제작
-   * Hangman 제작 - cmd 용이기에 업그레이드 필요
+   * 2020-07-30 Hangman 제작 - cmd 용이기에 업그레이드 필요
 
 ## 프로젝트 비고  
 쥬피터용 과 일반 파이썬 ide 에서 사용할 수 있는 폴더를 만들었습니다.
