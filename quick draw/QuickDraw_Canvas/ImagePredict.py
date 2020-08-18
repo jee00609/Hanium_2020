@@ -25,10 +25,12 @@ def save():
     # PIL image can be saved as .png .jpg .gif or .bmp file (among others)
     # filename = "my_drawing.png"
     # image1.save(filename)
+    #놔두긴 했는데 지워도 될듯
     filename = "saveImage\\MyDraw.png"
     image.save(filename)
     
 def clear():
+    #이거 제대로 안됨 -- 2020-08-17
     cv.delete ( "all")
     image = PIL.Image.new("RGB", (width, height), white)
     draw = ImageDraw.Draw(image)
@@ -72,10 +74,50 @@ def predict():
                 resultImage = ImageTk.PhotoImage(file=result)
                 label.configure(image=resultImage)
                 label.image = resultImage # keep a reference!
-                print("DONE!")
-
+#                 print("DONE!")
+                #2020-08-18 그림 인식 시 어떤 그림인지 텍스트로 표현
+                if pred_class==0:
+                    text.set("This is apple!")
+                elif pred_class==1:
+                    text.set("This is Bowtie!")
                 
 
+    elif os.path.isdir(file):
+        print("Yes. it is a directory")
+    elif os.path.exists(file):
+        print("Something exist")
+    else :
+        print("Nothing")
+        
+def voice():
+    model = load_model('QuickDraw.h5')
+    file = 'saveImage\\image.png'
+    emojis = get_QD_emojis()
+
+
+    if os.path.isfile(file):
+        print("Yes. it is a file")
+        src = cv2.imread(file, cv2.IMREAD_COLOR)
+        dst = cv2.bitwise_not(src)
+
+        blackboard_gray = cv2.cvtColor(dst, cv2.COLOR_BGR2GRAY)
+        blur1 = cv2.medianBlur(blackboard_gray, 1)
+        blur1 = cv2.GaussianBlur(blur1, (5, 5), 0)
+
+        thresh1 = cv2.threshold(blur1, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+
+        blackboard_cnts= cv2.findContours(thresh1.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)[0]
+
+        if len(blackboard_cnts) >= 1:
+            cnt = sorted(blackboard_cnts, key=cv2.contourArea, reverse=True)[0]
+            print(cv2.contourArea(cnt))
+            if cv2.contourArea(cnt) > 2000:
+                x, y, w, h = cv2.boundingRect(cnt)
+                digit = blackboard_gray[y:y + h, x:x + w]
+                pred_probab, pred_class = keras_predict(model, digit)
+                if pred_class==0:
+                    playsound('saveAudio\\sampleAudio.mp3')
+                
     elif os.path.isdir(file):
         print("Yes. it is a directory")
     elif os.path.exists(file):
@@ -125,7 +167,7 @@ def get_QD_emojis():
     return emojis
 
 root = Tk()
-root.geometry("800x450")
+root.geometry("800x420")
 
 # Tkinter create a canvas to draw on
 cv = Canvas(root, width=width, height=height, bg='white')
@@ -142,10 +184,16 @@ cv.bind("<B1-Motion>", paint)
 cv.bind("<ButtonRelease-1>", reset_coords)
 root.bind("<Escape>", lambda e: root.destroy())
 
+text= StringVar(root)
+text.set("그림을 그리면 알아맞출게요!\n")
+# text.configure(state="disabled")
+textlabel = Label(root, textvariable=text)
+textlabel.place(x=400, y=0, width=400, height=30)
+
 
 predImage = ImageTk.PhotoImage(file="qd_emo\\1.png")
-label=Label(root,width=width-200, height=height-200,image=predImage)
-label.place(x=400, y=0, width=400, height=400)
+label=Label(root,image=predImage)
+label.place(x=400, y=30, width=400, height=400)
 
 
 button=Button(text="clear",command=clear)
@@ -157,6 +205,8 @@ button.place(x=300, y=400, width=100, height=20)
 button=Button(text="predict",command=predict)
 button.place(x=150, y=400, width=100, height=20)
 
+button=Button(text="voice",command=voice)
+button.place(x=550, y=350, width=100, height=20)
 
 
 root.mainloop()
