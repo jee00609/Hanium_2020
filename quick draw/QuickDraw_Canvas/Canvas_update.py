@@ -8,7 +8,8 @@ from keras.models import load_model
 import numpy as np
 from collections import deque
 import os
-from playsound import playsound
+# from playsound import playsound
+import pygame, mutagen.mp3
 
 from PIL import ImageTk,ImageGrab,Image
 
@@ -53,6 +54,9 @@ def predict():
             cnt = sorted(blackboard_cnts, key=cv2.contourArea, reverse=True)[0]
             print(cv2.contourArea(cnt))
             if cv2.contourArea(cnt) > 2000:
+                #list 에서 빼옴으로써 if 문 나열을 하지 않게 만들것!
+                predict_data = {0:"cloud",1:"lightning",2:"moon",3:"rain",4:"rainbow",5:"snowflake",6:"star",7:"sun",8:"tornado"}
+                
                 x, y, w, h = cv2.boundingRect(cnt)
                 digit = blackboard_gray[y:y + h, x:x + w]
                 pred_probab, pred_class = keras_predict(model, digit)
@@ -66,10 +70,9 @@ def predict():
                 resultImage = ImageTk.PhotoImage(file=result)
                 label.configure(image=resultImage)
                 label.image = resultImage # keep a reference!
-                if pred_class==0:
-                    text.set("This is apple!")
-                elif pred_class==1:
-                    text.set("This is Bowtie!")
+                
+                robot_answer = predict_data[pred_class]
+                text.set(robot_answer)
                 
 
     elif os.path.isdir(file):
@@ -83,7 +86,6 @@ def voice():
     model = load_model('QuickDraw.h5')
     file = 'saveImage\\image.png'
     emojis = get_QD_emojis()
-
 
     if os.path.isfile(file):
         print("Yes. it is a file")
@@ -113,12 +115,35 @@ def voice():
                     if flag ==0:
                         #Female Voice
                         sound_dir = "saveAudio\\female\\"+str(voice_name)+".mp3"
-                        print(sound_dir)
-                        playsound(sound_dir)
+                        
+                        mp3 = mutagen.mp3.MP3(sound_dir)
+                        frequency=mp3.info.sample_rate
+                        bitsize = -16   # signed 16 bit. support 8,-8,16,-16
+                        channels = 1    # 1 is mono, 2 is stereo
+                        buffer = 2048   # number of samples (experiment to get right sound)
+                        
+                        pygame.mixer.quit()
+                        # default : pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=4096)
+                        pygame.mixer.init(frequency,bitsize, channels, buffer)
+
+                        pygame.mixer.music.load(sound_dir)
+                        pygame.mixer.music.play()
                     elif flag ==1:
                         #Male Voice
                         sound_dir = "saveAudio\\male\\"+str(voice_name)+".mp3"
-                        playsound(sound_dir)
+                        
+                        mp3 = mutagen.mp3.MP3(sound_dir)
+                        frequency=mp3.info.sample_rate
+                        bitsize = -8   # signed 16 bit. support 8,-8,16,-16
+                        channels = 1    # 1 is mono, 2 is stereo
+                        buffer = 2048   # number of samples (experiment to get right sound)
+                        
+                        pygame.mixer.quit()
+                        # default : pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=4096)
+                        pygame.mixer.init(frequency,bitsize, channels, buffer)
+
+                        pygame.mixer.music.load(sound_dir)
+                        pygame.mixer.music.play()
                 
     elif os.path.isdir(file):
         print("Yes. it is a directory")
