@@ -1,3 +1,5 @@
+## pygame 으로 실행할 시 mp3 1개 파일에 대한 재생이 무한히 반복되는 문제 발생
+
 import cv2
 from PIL import ImageTk, Image, ImageDraw
 import PIL
@@ -107,43 +109,25 @@ def voice():
                 x, y, w, h = cv2.boundingRect(cnt)
                 digit = blackboard_gray[y:y + h, x:x + w]
                 pred_probab, pred_class = keras_predict(model, digit)
-                if pred_class==0:
-                    global flag
-                    print(flag)
-                    voice_name = pred_class
-                    
-                    if flag ==0:
-                        #Female Voice
-                        sound_dir = "saveAudio\\female\\"+str(voice_name)+".mp3"
-                        
-                        mp3 = mutagen.mp3.MP3(sound_dir)
-                        frequency=mp3.info.sample_rate
-                        bitsize = -16   # signed 16 bit. support 8,-8,16,-16
-                        channels = 1    # 1 is mono, 2 is stereo
-                        buffer = 2048   # number of samples (experiment to get right sound)
-                        
-                        pygame.mixer.quit()
-                        # default : pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=4096)
-                        pygame.mixer.init(frequency,bitsize, channels, buffer)
+                print("heyhey!",pred_probab," and ", pred_class)
+                
+                global flag
+                print(flag)
+                voice_name = pred_class
 
-                        pygame.mixer.music.load(sound_dir)
-                        pygame.mixer.music.play()
-                    elif flag ==1:
-                        #Male Voice
-                        sound_dir = "saveAudio\\male\\"+str(voice_name)+".mp3"
-                        
-                        mp3 = mutagen.mp3.MP3(sound_dir)
-                        frequency=mp3.info.sample_rate
-                        bitsize = -8   # signed 16 bit. support 8,-8,16,-16
-                        channels = 1    # 1 is mono, 2 is stereo
-                        buffer = 2048   # number of samples (experiment to get right sound)
-                        
-                        pygame.mixer.quit()
-                        # default : pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=4096)
-                        pygame.mixer.init(frequency,bitsize, channels, buffer)
-
-                        pygame.mixer.music.load(sound_dir)
-                        pygame.mixer.music.play()
+                if flag ==0:
+                    #Female Voice
+                    sound_dir = "saveAudio\\female\\"+str(voice_name)+".mp3"
+                    print(sound_dir)
+                    ## https://kkamikoon.tistory.com/135 참고
+                    ## 그는 신이야!
+                    playmusic(sound_dir)
+                    stopmusic()
+                elif flag ==1:
+                    #Male Voice
+                    sound_dir = "saveAudio\\male\\"+str(voice_name)+".mp3"
+                    playmusic(sound_dir)
+                    stopmusic()
                 
     elif os.path.isdir(file):
         print("Yes. it is a directory")
@@ -151,6 +135,31 @@ def voice():
         print("Something exist")
     else :
         print("Nothing")
+        
+def playmusic(soundfile):
+    """Stream music with mixer.music module in blocking manner.
+       This will stream the sound from disk while playing.
+    """
+    pygame.init()
+
+    bitsize = -16   # signed 16 bit. support 8,-8,16,-16
+    channels = 1    # 1 is mono, 2 is stereo
+    buffer = 2048   # number of samples (experiment to get right sound)
+    mp3 = mutagen.mp3.MP3(soundfile)
+    frequency=mp3.info.sample_rate
+    
+    pygame.mixer.init()
+    clock= pygame.time.Clock()
+    pygame.mixer.music.load(soundfile)
+    pygame.mixer.music.play()
+    while pygame.mixer.music.get_busy():
+#         print("Playing... - func => playingmusic")
+        clock.tick(1000)
+
+def stopmusic():
+    """stop currently playing music"""
+    pygame.mixer.music.stop()
+
         
 def flag():
     global flag
