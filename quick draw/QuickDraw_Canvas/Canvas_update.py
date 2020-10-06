@@ -1,4 +1,6 @@
-## pygame 으로 실행할 시 mp3 1개 파일에 대한 재생이 무한히 반복되는 문제 발생
+## pygame 으로 실행할 시 mp3 1개 파일에 대한 재생이 무한히 반복되는 문제 발생 고침
+## 처음 실행했을 때 voice 가 단번에 실행 안됨
+## 이미지를 잘라낼 때 문제점 발생한 걸 알아냄
 
 import cv2
 from PIL import ImageTk, Image, ImageDraw
@@ -14,6 +16,8 @@ import os
 import pygame, mutagen.mp3
 
 from PIL import ImageTk,ImageGrab,Image
+
+import matplotlib.pyplot as plt
 
 width = 400
 height = 400
@@ -49,20 +53,24 @@ def predict():
         blur1 = cv2.GaussianBlur(blur1, (5, 5), 0)
 
         thresh1 = cv2.threshold(blur1, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-
+    
         blackboard_cnts= cv2.findContours(thresh1.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)[0]
-
+        
         if len(blackboard_cnts) >= 1:
             cnt = sorted(blackboard_cnts, key=cv2.contourArea, reverse=True)[0]
             print(cv2.contourArea(cnt))
             if cv2.contourArea(cnt) > 2000:
                 #list 에서 빼옴으로써 if 문 나열을 하지 않게 만들것!
                 predict_data = {0:"cloud",1:"lightning",2:"moon",3:"rain",4:"rainbow",5:"snowflake",6:"star",7:"sun",8:"tornado"}
-                
+#                 digit = blackboard_gray
                 x, y, w, h = cv2.boundingRect(cnt)
                 digit = blackboard_gray[y:y + h, x:x + w]
+                
+                #matplotlib 사용
+                plt.imshow(digit)
+                plt.show()
+                
                 pred_probab, pred_class = keras_predict(model, digit)
-
                 print("hey!",pred_probab," and ", pred_class)
                 result_path1 = 'qd_emo\\'
                 result_path2 = '.png'
@@ -75,6 +83,24 @@ def predict():
                 
                 robot_answer = predict_data[pred_class]
                 text.set(robot_answer)
+                
+                global flag
+                print(flag)
+                voice_name = pred_class
+
+                if flag ==0:
+                    #Female Voice
+                    sound_dir = "saveAudio\\female\\"+str(voice_name)+".mp3"
+                    print(sound_dir)
+                    ## https://kkamikoon.tistory.com/135 참고
+                    ## 그는 신이야!
+                    playmusic(sound_dir)
+                    stopmusic()
+                elif flag ==1:
+                    #Male Voice
+                    sound_dir = "saveAudio\\male\\"+str(voice_name)+".mp3"
+                    playmusic(sound_dir)
+                    stopmusic()
                 
 
     elif os.path.isdir(file):
@@ -104,8 +130,8 @@ def voice():
 
         if len(blackboard_cnts) >= 1:
             cnt = sorted(blackboard_cnts, key=cv2.contourArea, reverse=True)[0]
-            print(cv2.contourArea(cnt))
             if cv2.contourArea(cnt) > 2000:
+#                 digit = blackboard_gray
                 x, y, w, h = cv2.boundingRect(cnt)
                 digit = blackboard_gray[y:y + h, x:x + w]
                 pred_probab, pred_class = keras_predict(model, digit)
@@ -170,7 +196,6 @@ def flag():
         flag=0
 
 def paint(event):
-    # python_green = "#476042"
     x1, y1 = event.x, event.y
     if cv.old_coords:
         x2, y2 = cv.old_coords
@@ -186,10 +211,12 @@ def reset_coords(event):
 def keras_predict(model, image):
     print("function keras_predict start")
     processed = keras_process_image(image)
-    print("processed: " + str(processed.shape))
+    print("processed,shape: " + str(processed.shape))
     pred_probab = model.predict(processed)[0]
     print("keras_predict pred_probab = ",pred_probab)
+    
     pred_class = list(pred_probab).index(max(pred_probab))
+    print("keras_predict function",list(pred_probab))
     return max(pred_probab), pred_class
 
 
