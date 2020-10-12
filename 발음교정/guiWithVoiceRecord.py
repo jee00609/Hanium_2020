@@ -59,7 +59,8 @@ class PageOne(tk.Frame):
     chunk = 1024 
     sample_format = pyaudio.paInt16 
     channels = 2
-    fs = 44100  
+#     fs = 44100 
+    fs = 16000 
     
     audio_frames = [] 
 
