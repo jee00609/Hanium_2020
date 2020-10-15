@@ -2,6 +2,8 @@
 # License: http://creativecommons.org/licenses/by-sa/3.0/	
 # 하나의 윈도우 창에서 스위칭 하는 코드
 # 왼쪽에 있어야 하는 버튼 다 만듬
+# next prev 버튼 만듬
+# 질문 이미지 및 질문 텍스트 만듬
 
 import tkinter as tk
 
@@ -81,25 +83,34 @@ class PageOne(tk.Frame):
 
     def __init__(self, parent, controller):
         #변수
-        voice_name = 0
+        global voice_name
+        voice_name= 0
         mp3level = "level\\level1\\audio\\"
         mp3Name = mp3level+str(voice_name)+".mp3"
         
         #Quest 이미지
+        global qImage_name
         qImage_name = 0
         qImageLevel = "level\\level1\\image\\"
         qImageDir = qImageLevel+str(qImage_name)+".jpg"
+        
+        #Quest 이미지에 대한 라벨
+        #전역 변수가 너무 많아 지는 것 같은데 어떡하지?
+        global imgLabel
+        
+        #Quest 설명에 대한 라벨
+        global questionText
         
         #Result 이미지
         rImage_name = "base"
         rImageLevel = "image\\"
         rImageDir = rImageLevel+str(rImage_name)+".jpg"
-        print(rImageDir)
         
         #질문 문장 배열 quest sentence
-        qSentence = sentence_level1
+        qSentence1 = sentence_level1
         
         #발음 평가 점수
+        global pronunciation
         pronunciation = 0
         strPronunciation = "Your pronunciation score is "+str(pronunciation)
         
@@ -125,13 +136,13 @@ class PageOne(tk.Frame):
         load = Image.open(qImageDir)
         load = load.resize((350, 250))
         render = ImageTk.PhotoImage(load)
-        img = tk.Label(self, image=render)
-        img.image = render
-        img.place(x=25, y=50)
+        imgLabel = tk.Label(self, image=render)
+        imgLabel.image = render
+        imgLabel.place(x=25, y=50)
         
         #설명
         questionText=tk.Text(self)
-        questionText.insert(tk.CURRENT, qSentence[0])
+        questionText.insert(tk.CURRENT, qSentence1[0])
         ##아래 두줄 모두 중앙 정렬을 위해 필요하다.
         questionText.tag_configure("center", justify='center')
         questionText.tag_add("center", "1.0", "end")
@@ -166,8 +177,11 @@ class PageOne(tk.Frame):
         pronunciationText.place(x=427, y=300, width=350, height=30)
         
         #이전 버튼
-        
+        button7 = tk.Button(self, text='Prev',command=self.prevB)
+        button7.place(x=500, y=360, width=75, height=50)
         #다음 버튼
+        button8 = tk.Button(self, text='Next',command=self.nextB)
+        button8.place(x=625, y=360, width=75, height=50)
         
         
     def startrecording(self):
@@ -189,7 +203,7 @@ class PageOne(tk.Frame):
         wf.setframerate(self.fs)
         wf.writeframes(b''.join(self.audio_frames))
         wf.close()
-#         main.destroy()
+
     def record(self):
        
         while self.isrecording:
@@ -214,16 +228,69 @@ class PageOne(tk.Frame):
         pygame.mixer.music.load(mp3Name)
         pygame.mixer.music.play()
         while pygame.mixer.music.get_busy():
-    #         print("Playing... - func => playingmusic")
             clock.tick(1000)
 
+    def prevB(self):      
+        print("preb")
+        global qImage_name
+        qImage_name = qImage_name -1
+        if qImage_name < 0:
+            qImage_name = 0
+        
+        #이미지
+        num = qImage_name
+        qImageLevel = "level\\level1\\image\\"
+        qImageDir = qImageLevel+str(num)+".jpg"
+        
+        self.load = Image.open(qImageDir)
+        self.load = self.load.resize((350, 250))
+        self.render = ImageTk.PhotoImage(self.load)
+        imgLabel = tk.Label(self, image=self.render)
+        imgLabel.image = self.render
+        imgLabel.place(x=25, y=50)
+        
+        #설명
+        qSentence1 = sentence_level1
+        questionText.delete(1.0,"end")
+        questionText.insert(1.0, qSentence1[num])
+        questionText.tag_configure("center", justify='center')
+        questionText.tag_add("center", "1.0", "end")
+        
+    def nextB(self):
+        print("nextb")
+        global qImage_name
+        global imgLabel
+        global questionText
+        qImage_name = qImage_name +1
+        
+        #이미지 테스트일 때만 1로 맞추자
+        #원래는 4
+        if qImage_name > 1:
+            qImage_name = 1
+        
+        num = qImage_name
+        qImageLevel = "level\\level1\\image\\"
+        qImageDir = qImageLevel+str(num)+".jpg"
+        
+        self.load = Image.open(qImageDir)
+        self.load = self.load.resize((350, 250))
+        self.render = ImageTk.PhotoImage(self.load)
+        imgLabel = tk.Label(self, image=self.render)
+        imgLabel.image = self.render
+        imgLabel.place(x=25, y=50)
+        
+        #설명
+        qSentence1 = sentence_level1
+        questionText.delete(1.0,"end")
+        questionText.insert(1.0, qSentence1[num])
+        questionText.tag_configure("center", justify='center')
+        questionText.tag_add("center", "1.0", "end")
 
 class PageTwo(tk.Frame):
     
     chunk = 1024 
     sample_format = pyaudio.paInt16 
     channels = 2
-#     fs = 44100 
     fs = 16000 
     
     audio_frames = [] 
