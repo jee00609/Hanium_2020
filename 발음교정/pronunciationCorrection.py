@@ -1,17 +1,18 @@
+# 2020-10-18
+# mp3 파일이 아닌 raw pcm 파일로 테스트 하니 제대로 된 결과값 도출
 #-*- coding:utf-8 -*-
 import urllib3
 import json
 import base64
 
+import urllib3
+from typing import Dict
+
 openApiURL = "http://aiopen.etri.re.kr:8000/WiseASR/Pronunciation"
 accessKey = "발급받은 api"
-audioFilePath = "audio/ENG_F_E038F4O1_009.mp3"
+audioFilePath = "audio/test.raw"
 languageCode = "english"
-
-#녹음된 음성파일의 제시 문장입니다. 
-#API 요청 시 script가 포함되지 않는 경우 비원어민 영어 음성인식을 수행한 이후 인식 결과에 대한 발음평가 점수를 제공합니다.
-#API 정확도가 집나가서 이거 있으면 0.0 점 나오는 거였음
-script = "when shall i pay for it now or at check out time."
+script = "hello my name kim min jee"
  
 file = open(audioFilePath, "rb")
 audioContents = base64.b64encode(file.read()).decode("utf8")
@@ -21,21 +22,23 @@ requestJson = {
     "access_key": accessKey,
     "argument": {
         "language_code": languageCode,
-        #"script": script,
+        "script" : script,
         "audio": audioContents
     }
 }
  
 http = urllib3.PoolManager()
-
 response = http.request(
     "POST",
     openApiURL,
     headers={"Content-Type": "application/json; charset=UTF-8"},
     body=json.dumps(requestJson)
 )
-
  
-print("[responseCode] " + str(response.status))
-print("[responBody]")
-print(str(response.data,"utf-8"))
+#https://minwook-shin.github.io/python-urllib3-get-url/ 참고
+result = json.loads(response.data.decode('utf-8'))
+print(type(result))
+print(result['return_object'])
+
+score = result['return_object']['score']
+print(score)
