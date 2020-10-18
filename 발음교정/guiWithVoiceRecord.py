@@ -7,18 +7,14 @@
 # |이미지                       || 맞음/틀림 이미지        |
 # |이미지설명 텍스트            || 현재 점수 텍스트         |
 # |소리/녹음/녹음멈춤 버튼      || 전이미지/다음이미지 버튼 |
-# 왼쪽은 거의 다 만든 듯
-
-# The code for changing pages was derived from: http://stackoverflow.com/questions/7546050/switch-between-two-frames-in-tkinter
-# License: http://creativecommons.org/licenses/by-sa/3.0/	
-# 하나의 윈도우 창에서 스위칭 하는 코드
-# 왼쪽에 있어야 하는 버튼 다 만듬
-# next prev 버튼 만듬
-# 질문 이미지 및 질문 텍스트 만듬
 
 # 2020-10-18
 # 기존의 녹음 파일에 대해서 wav 파일이 아닌 raw pcm 으로 녹음하도록 변경
 
+# 2020-10-19
+# 페이지 1은 거의 다 완성한듯 보임
+# 1. 문장에 맞는 이미지를 넣는 것
+# 2. 페이지 2 및 3 만들기
 import tkinter as tk
 
 #녹음
@@ -37,8 +33,18 @@ from sentences import sentence_level1
 from sentences import sentence_level2
 from sentences import sentence_level3
 
-# raw pcm 녹음 기능을 위한 라이브러리
+#pcm 녹음 coding: utf-8 
 import sounddevice as sd
+
+##-발음 교정 api 사용
+import urllib3
+import json
+import base64
+
+#api response string to dict
+from typing import Dict
+
+from procor import proCorrect
 
 class Main(tk.Tk):
 
@@ -89,14 +95,6 @@ class StartPage(tk.Frame):
 
 #Level1
 class PageOne(tk.Frame):
-    
-    chunk = 1024 
-    sample_format = pyaudio.paInt16 
-    channels = 2
-#     fs = 44100 
-    fs = 16000 
-    
-    audio_frames = [] 
 
     def __init__(self, parent, controller):
         #변수
@@ -126,14 +124,14 @@ class PageOne(tk.Frame):
         #질문 문장 배열 quest sentence
         qSentence1 = sentence_level1
         
-        #발음 평가 점수
-        global pronunciation
+        #발음 평가 점수에 대한 라벨
+        global pronunciationText
+        
         pronunciation = 0
         strPronunciation = "Your pronunciation score is "+str(pronunciation)
         
         
         #콘텐츠
-        
         tk.Frame.__init__(self, parent)
         self.isrecording = False
 
@@ -172,8 +170,8 @@ class PageOne(tk.Frame):
         #Record 녹음
         button5 = tk.Button(self, text='rec',command=self.startrecording)
         button5.place(x=150, y=360, width=100, height=50)
-#         button6 = tk.Button(self, text='stop',command=self.stoprecording)
-#         button6.place(x=250, y=360, width=100, height=50)
+        button6 = tk.Button(self, text='Go!',command=self.pronunciationC)
+        button6.place(x=250, y=360, width=100, height=50)
         
         #############################################################
         
@@ -202,7 +200,8 @@ class PageOne(tk.Frame):
         
         
     def startrecording(self):
-        duration = 10
+        #녹음
+        duration = 5
         fs = 16000
         rec = sd.rec(duration * fs, samplerate=fs, channels=1, dtype='int16')
         sd.wait()
@@ -210,7 +209,37 @@ class PageOne(tk.Frame):
         with open('audio/test.raw', 'wb') as w:
             w.write(pcm)
             
+    def pronunciationC(self):
+        #발음교정
+        getText = questionText.get("1.0", "end")
+        script = str(getText)
+        # \n 안 지워주면 result -500 에러
+        script = script.rstrip("\n")
+        #이미지 경로
+        winImg = "image\\win.jpg"
+        loseImg = "image\\lose.jpg"
+        imgDir = "image\\win.jpg"
+        
+        result = proCorrect(script)
+        pronunciationText.delete(1.0,"end")
+        pronunciationText.insert(1.0, "Your pronunciation score is "+ str(result))
+        pronunciationText.tag_configure("center", justify='center')
+        pronunciationText.tag_add("center", "1.0", "end")
+        
+        if result > 3:
+            imgDir = "image\\win.jpg"
+        else:
+            imgDir = "image\\lose.jpg"
+        
+        self.rLoad = Image.open(imgDir)
+        self.rLoad = self.rLoad.resize((350, 200))
+        self.rRender = ImageTk.PhotoImage(self.rLoad)
+        rlmg = tk.Label(self, image=self.rRender)
+        rlmg.image = self.rRender
+        rlmg.place(x=425, y=75)
+            
     def voice(self,mp3Name):
+        # mp3 파일 재생
         sound_dir = mp3Name
         self.playmusic(sound_dir)
         
@@ -242,6 +271,8 @@ class PageOne(tk.Frame):
         qImageLevel = "level\\level1\\image\\"
         qImageDir = qImageLevel+str(num)+".jpg"
         
+        imgDir = "image\\base.jpg"
+        
         self.load = Image.open(qImageDir)
         self.load = self.load.resize((350, 250))
         self.render = ImageTk.PhotoImage(self.load)
@@ -255,6 +286,14 @@ class PageOne(tk.Frame):
         questionText.insert(1.0, qSentence1[num])
         questionText.tag_configure("center", justify='center')
         questionText.tag_add("center", "1.0", "end")
+        
+        #스코어 디폴트 이미지
+        self.rLoad = Image.open(imgDir)
+        self.rLoad = self.rLoad.resize((350, 200))
+        self.rRender = ImageTk.PhotoImage(self.rLoad)
+        rlmg = tk.Label(self, image=self.rRender)
+        rlmg.image = self.rRender
+        rlmg.place(x=425, y=75)
         
     def nextB(self):
         print("nextb")
@@ -272,6 +311,8 @@ class PageOne(tk.Frame):
         qImageLevel = "level\\level1\\image\\"
         qImageDir = qImageLevel+str(num)+".jpg"
         
+        imgDir = "image\\base.jpg"
+        
         self.load = Image.open(qImageDir)
         self.load = self.load.resize((350, 250))
         self.render = ImageTk.PhotoImage(self.load)
@@ -285,6 +326,14 @@ class PageOne(tk.Frame):
         questionText.insert(1.0, qSentence1[num])
         questionText.tag_configure("center", justify='center')
         questionText.tag_add("center", "1.0", "end")
+        
+        #스코어 디폴트 이미지
+        self.rLoad = Image.open(imgDir)
+        self.rLoad = self.rLoad.resize((350, 200))
+        self.rRender = ImageTk.PhotoImage(self.rLoad)
+        rlmg = tk.Label(self, image=self.rRender)
+        rlmg.image = self.rRender
+        rlmg.place(x=425, y=75)
 
 class PageTwo(tk.Frame):
     
@@ -379,3 +428,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
