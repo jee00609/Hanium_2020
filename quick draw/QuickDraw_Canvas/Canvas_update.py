@@ -1,7 +1,3 @@
-## pygame 으로 실행할 시 mp3 1개 파일에 대한 재생이 무한히 반복되는 문제 발생 고침
-## 처음 실행했을 때 voice 가 단번에 실행 안됨
-## 이미지를 잘라낼 때 문제점 발생한 걸 알아냄
-
 import cv2
 from PIL import ImageTk, Image, ImageDraw
 import PIL
@@ -55,13 +51,13 @@ def predict():
         thresh1 = cv2.threshold(blur1, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
     
         blackboard_cnts= cv2.findContours(thresh1.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)[0]
+        predict_data = {0:"cloud",1:"lightning",2:"moon",3:"rain",4:"rainbow",5:"snowflake",6:"star",7:"sun",8:"tornado"}
         
         if len(blackboard_cnts) >= 1:
             cnt = sorted(blackboard_cnts, key=cv2.contourArea, reverse=True)[0]
             print(cv2.contourArea(cnt))
             if cv2.contourArea(cnt) > 2000:
-                #list 에서 빼옴으로써 if 문 나열을 하지 않게 만들것!
-                predict_data = {0:"cloud",1:"lightning",2:"moon",3:"rain",4:"rainbow",5:"snowflake",6:"star",7:"sun",8:"tornado"}
+
 #                 digit = blackboard_gray
                 x, y, w, h = cv2.boundingRect(cnt)
                 digit = blackboard_gray[y:y + h, x:x + w]
@@ -101,7 +97,8 @@ def predict():
                     sound_dir = "saveAudio\\male\\"+str(voice_name)+".mp3"
                     playmusic(sound_dir)
                     stopmusic()
-                
+            else:
+                print("sorry i don't know")
 
     elif os.path.isdir(file):
         print("Yes. it is a directory")
@@ -252,7 +249,7 @@ image = PIL.Image.new("RGB", (width, height), white)
 draw = ImageDraw.Draw(image)
 
 #expand=True, fill="both"
-cv.place(x=0, y=0, width=400, height=400)
+cv.place(x=0, y=0, width=400, height=350)
 cv.bind("<B1-Motion>", paint)
 cv.bind("<ButtonRelease-1>", reset_coords)
 root.bind("<Escape>", lambda e: root.destroy())
@@ -269,16 +266,16 @@ label.place(x=400, y=20, width=400, height=360)
 
 
 button=Button(text="clear",command=clear)
-button.place(x=0, y=400, width=100, height=20)
+button.place(x=0, y=350, width=100, height=20)
 
 button=Button(text="predict",command=predict)
-button.place(x=300, y=400, width=100, height=20)
+button.place(x=300, y=350, width=100, height=20)
 
 button=Button(text="voice",command=voice)
 button.place(x=550, y=350, width=100, height=20)
 
 button=Button(text="Flag",command=flag)
-button.place(x=760, y=380, width=40, height=40)
+button.place(x=720, y=350, width=80, height=40)
 flag = 0
 
 
